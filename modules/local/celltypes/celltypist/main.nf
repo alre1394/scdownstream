@@ -10,6 +10,7 @@ process CELLTYPES_CELLTYPIST {
     input:
     tuple val(meta), path(h5ad), val(symbol_col)
     val models
+    val save_probabilities
 
     output:
     tuple val(meta), path("*.h5ad"), emit: h5ad

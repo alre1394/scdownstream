@@ -4,9 +4,10 @@ include { CELLTYPES_CELLTYPIST } from '../../../modules/local/celltypes/celltypi
 
 workflow CELLTYPE_ASSIGNMENT {
     take:
-    ch_h5ad           // channel: [ meta, h5ad, symbol_col ]
-    celldex_reference //   value: string
-    celltypist_model  //   value: string
+    ch_h5ad                      // channel: [ meta, h5ad, symbol_col ]
+    celldex_reference            //   value: string
+    celltypist_model             //   value: string
+    celltypist_save_probabilities //   value: boolean
 
     main:
     ch_versions = channel.empty()
@@ -32,7 +33,8 @@ workflow CELLTYPE_ASSIGNMENT {
 
         CELLTYPES_CELLTYPIST (
             ch_h5ad,
-            celltypist_models
+            celltypist_models,
+            celltypist_save_probabilities
         )
         ch_obs = ch_obs.mix(CELLTYPES_CELLTYPIST.out.obs)
         ch_versions = ch_versions.mix(CELLTYPES_CELLTYPIST.out.versions)

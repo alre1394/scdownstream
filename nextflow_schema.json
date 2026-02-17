@@ -235,8 +235,14 @@
                 "celltypist_model": {
                     "type": "string",
                     "description": "Specify the models to use for the celltypist cell type annotation",
-                    "help_text": "If you want to use multiple models, separate them with a comma. Available models can be found [here](https://www.celltypist.org/models).",
-                    "pattern": "^([a-zA-Z0-9_]*(,[a-zA-Z0-9_]*)*)?$"
+                    "help_text": "Can be model names (e.g., 'Immune_All_Low', 'Cells_Blood_Vascular') or paths to .pkl files. If you want to use multiple models, separate them with a comma. Available models can be found [here](https://www.celltypist.org/models).",
+                    "pattern": "^([a-zA-Z0-9_./]+(,[a-zA-Z0-9_./]+)*)?$"
+                },
+                "celltypist_save_probabilities": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Save the full cell type probability matrix to adata.obsm['celltypist:<model>:probabilities']",
+                    "help_text": "When enabled, the complete probability matrix for all cell types will be saved. This can significantly increase file size for datasets with many cells and cell types."
                 },
                 "celldex_reference": {
                     "type": "string",

@@ -36,6 +36,7 @@ adata = sc.read_h5ad("${h5ad}")
 prefix = "${prefix}"
 
 models = "${models.join(' ')}".split()
+save_probabilities = "${save_probabilities}" == "true"
 
 adata_celltypist = adata.copy()  # make a copy of our adata
 sc.pp.normalize_per_cell(
@@ -56,9 +57,19 @@ adata_celltypist.var_names = adata_celltypist.var_names.astype(str)
 df_list = []
 
 for model in models:
-    model_file = f"{model}.pkl" if not model.endswith(".pkl") else model
-    model_name = model_file[:-4]
-    ct_models.download_models(model=model_file)
+    # Handle both model names and file paths
+    if model.endswith(".pkl"):
+        model_file = model
+        # Extract model name from file path
+        model_name = model.split('/')[-1].replace('.pkl', '')
+    else:
+        model_file = f"{model}.pkl"
+        model_name = model
+    
+    # Download model if it's a built-in model name (not a file path)
+    if not model.startswith('/') and not model.startswith('.'):
+        ct_models.download_models(model=model_file)
+    
     model_obj = ct_models.Model.load(model_file)
 
     predictions = celltypist.annotate(
@@ -72,6 +83,11 @@ for model in models:
 
     df_celltypist.columns = [f"celltypist:{model_name}", f"celltypist:{model_name}:conf"]
     df_list.append(df_celltypist)
+    
+    # Save full probability matrix if requested
+    if save_probabilities:
+        prob_matrix = predictions_adata.obsm["predicted_labels_probability"].loc[adata.obs.index]
+        adata.obsm[f"celltypist:{model_name}:probabilities"] = prob_matrix
 
 df_celltypist = pd.concat(df_list, axis=1)
 df_celltypist.to_pickle("${prefix}.pkl")
