@@ -86,7 +86,8 @@ for model in models:
     
     # Save full probability matrix if requested
     if save_probabilities:
-        prob_matrix = predictions_adata.obsm["predicted_labels_probability"].loc[adata.obs.index]
+        # Extract full probability matrix (already aligned with adata.obs.index)
+        prob_matrix = predictions_adata.obsm["predicted_labels_probability"]
         adata.obsm[f"celltypist:{model_name}:probabilities"] = prob_matrix
 
 df_celltypist = pd.concat(df_list, axis=1)
