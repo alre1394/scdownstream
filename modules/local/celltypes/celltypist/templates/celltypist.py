@@ -57,6 +57,17 @@ adata_celltypist.var_names = adata_celltypist.var_names.astype(str)
 df_list = []
 probability_files = {}
 
+# Define known organ atlas models (from https://www.celltypist.org/organs)
+ORGAN_ATLAS_MODELS = {
+    "Adult_Human_blood": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_blood.pkl",
+    "Adult_Human_gut": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_gut.pkl",
+    "Adult_Human_lung": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_lung.pkl",
+    "Adult_Human_heart": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_heart.pkl",
+    "Adult_Human_kidney": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_kidney.pkl",
+    "Adult_Human_liver": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_liver.pkl",
+    "Development_Human_Fetal": "https://celltypist.cog.sanger.ac.uk/models/organs/Development_Human_Fetal.pkl",
+}
+
 for model in models:
     print(f"Processing model: {model}")
     
@@ -71,20 +82,47 @@ for model in models:
         
         if not os.path.exists(model_file):
             raise FileNotFoundError(f"Model file not found: {model_file}")
-    else:
-        # It's a model name - download it first
+    
+    elif model in ORGAN_ATLAS_MODELS:
+        # It's an organ atlas model - download from organ atlas URL
         model_name = model
-        print(f"  Downloading model: {model_name}")
-        
-        # Download the model (without .pkl extension - celltypist expects just the name)
-        ct_models.download_models(model=model_name)
         model_file = f"{model_name}.pkl"
-        print(f"  Model downloaded successfully")
+        organ_url = ORGAN_ATLAS_MODELS[model]
+        
+        print(f"  Downloading organ atlas model: {model_name}")
+        print(f"  URL: {organ_url}")
+        
+        # Download the model file from organ atlas URL
+        import urllib.request
+        try:
+            urllib.request.urlretrieve(organ_url, model_file)
+            print(f"  ✓ Organ atlas model downloaded successfully")
+        except Exception as e:
+            raise RuntimeError(f"Failed to download organ atlas model from {organ_url}: {e}")
+    
+    else:
+        # It's a built-in celltypist model name - download using celltypist API
+        model_name = model
+        print(f"  Downloading built-in celltypist model: {model_name}")
+        
+        try:
+            # Download the model (without .pkl extension - celltypist expects just the name)
+            ct_models.download_models(model=model_name)
+            model_file = f"{model_name}.pkl"
+            print(f"  ✓ Built-in model downloaded successfully")
+        except ValueError as e:
+            # If model not found in built-in models, provide helpful error message
+            print(f"  ✗ Model '{model_name}' not found in built-in celltypist models")
+            print(f"  Available model types:")
+            print(f"    - Built-in models: https://github.com/Teichlab/celltypist")
+            print(f"    - Organ atlas models: {', '.join(ORGAN_ATLAS_MODELS.keys())}")
+            print(f"    - Local file paths: /path/to/model.pkl")
+            raise ValueError(f"Model '{model_name}' not recognized. {str(e)}")
     
     # Load the model
     print(f"  Loading model object from: {model_file}")
     model_obj = ct_models.Model.load(model_file)
-    print(f"  Model loaded successfully")
+    print(f"  ✓ Model loaded successfully")
 
     # Run celltypist annotation
     print(f"  Running celltypist annotation...")
