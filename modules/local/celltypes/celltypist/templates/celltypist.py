@@ -55,23 +55,39 @@ if symbol_col != "index" and symbol_col:
 adata_celltypist.var_names = adata_celltypist.var_names.astype(str)
 
 df_list = []
+probability_files = {}
 
 for model in models:
-    # Handle both model names and file paths
-    if model.endswith(".pkl"):
+    print(f"Processing model: {model}")
+    
+    # Check if it's a file path (contains "/" or "\" or ends with .pkl)
+    is_file_path = model.endswith(".pkl") or "/" in model or "\\" in model
+    
+    if is_file_path:
+        # It's a local file path - load directly
         model_file = model
-        # Extract model name from file path
-        model_name = model.split('/')[-1].replace('.pkl', '')
+        model_name = model.split("/")[-1].replace(".pkl", "")
+        print(f"  Loading from file: {model_file}")
+        
+        if not os.path.exists(model_file):
+            raise FileNotFoundError(f"Model file not found: {model_file}")
     else:
-        model_file = f"{model}.pkl"
+        # It's a model name - download it first
         model_name = model
+        print(f"  Downloading model: {model_name}")
+        
+        # Download the model (without .pkl extension - celltypist expects just the name)
+        ct_models.download_models(model=model_name)
+        model_file = f"{model_name}.pkl"
+        print(f"  Model downloaded successfully")
     
-    # Download model if it's a built-in model name (not a file path)
-    if not model.startswith('/') and not model.startswith('.'):
-        ct_models.download_models(model=model_file)
-    
+    # Load the model
+    print(f"  Loading model object from: {model_file}")
     model_obj = ct_models.Model.load(model_file)
+    print(f"  Model loaded successfully")
 
+    # Run celltypist annotation
+    print(f"  Running celltypist annotation...")
     predictions = celltypist.annotate(
         adata_celltypist, model=model_obj
     )
@@ -86,15 +102,48 @@ for model in models:
     
     # Save full probability matrix if requested
     if save_probabilities:
+        print(f"  Saving probability matrix to parquet file...")
+        
         # Extract full probability matrix (already aligned with adata.obs.index)
         prob_matrix = predictions_adata.obsm["predicted_labels_probability"]
-        adata.obsm[f"celltypist:{model_name}:probabilities"] = prob_matrix
+        
+        # Get cell type names from the predictions
+        cell_type_names = predictions_adata.obs['predicted_labels'].cat.categories.tolist()
+        
+        # Create DataFrame with cell barcodes as index and cell types as columns
+        prob_df = pd.DataFrame(
+            prob_matrix,
+            index=adata.obs.index,
+            columns=cell_type_names
+        )
+        
+        # Save to compressed parquet file
+        parquet_file = f"{prefix}_{model_name}_probabilities.parquet.gz"
+        prob_df.to_parquet(parquet_file, compression='gzip', index=True)
+        
+        file_size_mb = os.path.getsize(parquet_file) / 1024**2
+        print(f"  ✓ Probability matrix saved: {parquet_file} ({file_size_mb:.2f} MB)")
+        
+        # Store reference in adata metadata for later retrieval
+        if "celltypist_probability_files" not in adata.uns:
+            adata.uns["celltypist_probability_files"] = {}
+        adata.uns["celltypist_probability_files"][model_name] = parquet_file
+        probability_files[model_name] = parquet_file
 
 df_celltypist = pd.concat(df_list, axis=1)
 df_celltypist.to_pickle("${prefix}.pkl")
 
 adata.obs = pd.concat([adata.obs, df_celltypist], axis=1)
 adata.write_h5ad(f"{prefix}.h5ad")
+
+# Save metadata about probability files
+if probability_files:
+    metadata_df = pd.DataFrame({
+        "model_name": list(probability_files.keys()),
+        "parquet_file": list(probability_files.values())
+    })
+    metadata_df.to_csv(f"{prefix}_probabilities_metadata.csv", index=False)
+    print(f"✓ Probability files metadata saved: {prefix}_probabilities_metadata.csv")
 
 # Versions
 
@@ -109,3 +158,5 @@ versions = {
 
 with open("versions.yml", "w") as f:
     f.write(format_yaml_like(versions))
+
+print("✓ Celltypist annotation complete")
