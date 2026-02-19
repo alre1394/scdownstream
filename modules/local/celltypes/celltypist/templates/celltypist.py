@@ -59,12 +59,12 @@ probability_files = {}
 
 # Define known organ atlas models (from https://www.celltypist.org/organs)
 ORGAN_ATLAS_MODELS = {
-    "Adult_Human_blood": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_blood.pkl",
-    "Adult_Human_gut": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_gut.pkl",
-    "Adult_Human_lung": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_lung.pkl",
-    "Adult_Human_heart": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_heart.pkl",
-    "Adult_Human_kidney": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_kidney.pkl",
-    "Adult_Human_liver": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_liver.pkl",
+    "Adult_Human_Blood": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Blood.pkl",
+    "Adult_Human_Gut": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Gut.pkl",
+    "Adult_Human_Lung": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Lung.pkl",
+    "Adult_Human_Heart": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Heart.pkl",
+    "Adult_Human_Kidney": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Kidney.pkl",
+    "Adult_Human_Liver": "https://celltypist.cog.sanger.ac.uk/models/organs/Adult_Human_Liver.pkl",
     "Development_Human_Fetal": "https://celltypist.cog.sanger.ac.uk/models/organs/Development_Human_Fetal.pkl",
 }
 
