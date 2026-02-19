@@ -14,7 +14,7 @@ process CELLTYPES_CELLTYPIST {
 
     output:
     tuple val(meta), path("*.h5ad"), emit: h5ad
-    tuple val(meta), path("*.pkl"), emit: obs
+    tuple val(meta), path("*_celltypist.pkl"), emit: obs
     path "versions.yml", emit: versions
 
     when:
