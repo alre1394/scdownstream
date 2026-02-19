@@ -16,8 +16,8 @@ process CELLTYPES_CELLTYPIST {
     output:
     tuple val(meta), path("*.h5ad"), emit: h5ad
     tuple val(meta), path("*_celltypist.pkl"), emit: obs
-    path("*_celltypist_probabilities.parquet.gz", optional: true), emit: probabilities
-    path("*_celltypist_probabilities_metadata.csv", optional: true), emit: probabilities_metadata
+    path "*_celltypist_probabilities.parquet.gz", emit: probabilities
+    path "*_celltypist_probabilities_metadata.csv", emit: probabilities_metadata
     path "versions.yml", emit: versions
 
     when:
