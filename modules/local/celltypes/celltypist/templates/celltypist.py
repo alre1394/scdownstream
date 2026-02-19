@@ -72,7 +72,7 @@ for model in models:
     print(f"Processing model: {model}")
     
     # Check if it's a file path (contains "/" or "\" or ends with .pkl)
-    is_file_path = model.endswith(".pkl") or "/" in model or "\\" in model
+    is_file_path = model.endswith(".pkl") or "/" in model or os.sep in model
     
     if is_file_path:
         # It's a local file path - load directly
