@@ -58,15 +58,20 @@ df_list = []
 probability_files = {}
 
 # Define known organ atlas models (from https://www.celltypist.org/organs)
-# Note: Model names use mixed case, but URLs use lowercase
+# Correct URL structure for all combined organ models: http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/ORGAN/models/Adult_Human_ORGAN.pkl
 ORGAN_ATLAS_MODELS = {
-    "Adult_Human_Blood": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_blood.pkl",
-    "Adult_Human_Gut": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_gut.pkl",
-    "Adult_Human_Lung": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_lung.pkl",
-    "Adult_Human_Heart": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_heart.pkl",
-    "Adult_Human_Kidney": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_kidney.pkl",
-    "Adult_Human_Liver": "https://celltypist.cog.sanger.ac.uk/models/organs/adult_human_liver.pkl",
-    "Development_Human_Fetal": "https://celltypist.cog.sanger.ac.uk/models/organs/development_human_fetal.pkl",
+    "Adult_Human_Blood": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Blood/models/Adult_Human_Blood.pkl",
+    "Adult_Human_Bone_marrow": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Bone_marrow/models/Adult_Human_Bone_marrow.pkl",
+    "Adult_Human_Heart": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Heart/models/Adult_Human_Heart.pkl",
+    "Adult_Human_Hippocampus": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Hippocampus/models/Adult_Human_Hippocampus.pkl",
+    "Adult_Human_Intestine": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Intestine/models/Adult_Human_Intestine.pkl",
+    "Adult_Human_Kidney": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Kidney/models/Adult_Human_Kidney.pkl",
+    "Adult_Human_Liver": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Liver/models/Adult_Human_Liver.pkl",
+    "Adult_Human_Lung": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Lung/models/Adult_Human_Lung.pkl",
+    "Adult_Human_Lymph_node": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Lymph_node/models/Adult_Human_Lymph_node.pkl",
+    "Adult_Human_Pancreas": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Pancreas/models/Adult_Human_Pancreas.pkl",
+    "Adult_Human_Skeletal_muscle": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Skeletal_muscle/models/Adult_Human_Skeletal_muscle.pkl",
+    "Adult_Human_Spleen": "http://celltypist.cog.sanger.ac.uk/Resources/Organ_atlas/Spleen/models/Adult_Human_Spleen.pkl"
 }
 
 for model in models:
@@ -78,42 +83,49 @@ for model in models:
     if is_file_path:
         # It's a local file path - load directly
         model_file = model
-        model_name = model.split("/")[-1].replace(".pkl", "")
+        model_name = os.path.basename(model).replace(".pkl", "")
         print(f"  Loading from file: {model_file}")
+        print(f"  Current working directory: {os.getcwd()}")
+        print(f"  Absolute path: {os.path.abspath(model_file)}")
         
         if not os.path.exists(model_file):
-            raise FileNotFoundError(f"Model file not found: {model_file}")
+            # Check if it's an absolute path that needs to be made relative
+            # Container work dir is isolated, so absolute paths won't work
+            basename = os.path.basename(model_file)
+            if os.path.exists(basename):
+                model_file = basename
+                print(f"  ✓ Found model in current directory: {basename}")
+            else:
+                print(f"  ✗ Model file not found in either location")
+                print(f"    Tried: {model}")
+                print(f"    Tried: {basename}")
+                print(f"    Available files: {os.listdir('.')}")
+                raise FileNotFoundError(
+                    f"Model file not found: {model_file}\n"
+                    f"  When running in containers, absolute paths may not be accessible.\n"
+                    f"  Use model names (for automatic download) or ensure the file is staged in the work directory."
+                )
     
     elif model in ORGAN_ATLAS_MODELS:
-        # It's an organ atlas model - try downloading via celltypist API with full model name
+        # It's an organ atlas model - download directly from organ atlas URL
         model_name = model
-        print(f"  Attempting to download organ atlas model: {model_name}")
+        model_file = f"{model_name}.pkl"
+        organ_url = ORGAN_ATLAS_MODELS[model]
         
-        # Try downloading via celltypist API (organ atlas models are in the model list)
+        print(f"  Downloading organ atlas model: {model_name}")
+        print(f"  URL: {organ_url}")
+        
+        # Download the model file from organ atlas URL
+        import urllib.request
         try:
-            # First try with the mixed-case name
-            ct_models.download_models(model=model_name, force_update=False)
-            model_file = f"{model_name}.pkl"
-            print(f"  ✓ Organ atlas model downloaded successfully via celltypist API")
-        except ValueError:
-            # If that fails, try constructing the URL with the expected lowercase format
-            organ_url = ORGAN_ATLAS_MODELS[model]
-            model_file = f"{model_name}.pkl"
-            print(f"  Celltypist API failed, trying direct download from: {organ_url}")
-            
-            import urllib.request
-            try:
-                urllib.request.urlretrieve(organ_url, model_file)
-                print(f"  ✓ Organ atlas model downloaded successfully via direct URL")
-            except Exception as e:
-                # Provide detailed error message with troubleshooting
-                print(f"  ✗ Failed to download {model_name}")
-                print(f"  Tried celltypist API and direct URL: {organ_url}")
-                raise RuntimeError(
-                    f"Failed to download organ atlas model '{model_name}'. "
-                    f"The model may not be available. Try using a built-in celltypist model instead, "
-                    f"or check https://www.celltypist.org/models for available models. Error: {e}"
-                )
+            urllib.request.urlretrieve(organ_url, model_file)
+            file_size_mb = os.path.getsize(model_file) / 1024**2
+            print(f"  ✓ Organ atlas model downloaded successfully ({file_size_mb:.2f} MB)")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to download organ atlas model from {organ_url}: {e}\n"
+                f"  Please check your internet connection and the URL accessibility."
+            )
     
     else:
         # It's a built-in celltypist model name - download using celltypist API
