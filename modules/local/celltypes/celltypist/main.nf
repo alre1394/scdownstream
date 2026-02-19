@@ -1,7 +1,20 @@
 process CELLTYPES_CELLTYPIST {
     tag "${meta.id}"
     label 'process_medium'
-    publishDir "${params.outdir}/celltype_assignment/celltypist", mode: 'copy'
+    // Conditional publishing for probability files
+    publishDir path: "${params.outdir}/celltype_assignment/celltypist", 
+        mode: 'copy',
+        enabled: params.celltypist_save_probabilities == true,
+        saveAs: { filename -> 
+            filename.contains('_probabilities.') ? filename : null 
+        }
+    
+    // Always publish main results
+    publishDir path: "${params.outdir}/celltype_assignment/celltypist", 
+        mode: 'copy',
+        saveAs: { filename -> 
+            (filename.endsWith('.h5ad') || filename.endsWith('_celltypist.pkl') || filename == 'versions.yml') ? filename : null
+        }
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
@@ -16,8 +29,8 @@ process CELLTYPES_CELLTYPIST {
     output:
     tuple val(meta), path("*.h5ad"), emit: h5ad
     tuple val(meta), path("*_celltypist.pkl"), emit: obs
-    path "*_celltypist_probabilities.parquet.gz", emit: probabilities
-    path "*_celltypist_probabilities_metadata.csv", emit: probabilities_metadata
+    path("*_probabilities.parquet.gz"), emit: probabilities, optional: true
+    path("*_probabilities_metadata.csv"), emit: probabilities_metadata, optional: true
     path "versions.yml", emit: versions
 
     when:

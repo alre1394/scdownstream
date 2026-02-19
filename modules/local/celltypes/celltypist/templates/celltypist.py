@@ -194,6 +194,8 @@ for model in models:
             adata.uns["celltypist_probability_files"] = {}
         adata.uns["celltypist_probability_files"][model_name] = parquet_file
         probability_files[model_name] = parquet_file
+    else:
+        print(f"  Skipping probability matrix saving (celltypist_save_probabilities=False)")
 
 df_celltypist = pd.concat(df_list, axis=1)
 df_celltypist.to_pickle("${prefix}.pkl")
@@ -202,7 +204,7 @@ adata.obs = pd.concat([adata.obs, df_celltypist], axis=1)
 adata.write_h5ad(f"{prefix}.h5ad")
 
 # Save metadata about probability files
-if probability_files:
+if save_probabilities and probability_files:
     metadata_df = pd.DataFrame({
         "model_name": list(probability_files.keys()),
         "parquet_file": list(probability_files.values())
