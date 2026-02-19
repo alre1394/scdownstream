@@ -101,9 +101,9 @@ for model in models:
                 print(f"    Tried: {basename}")
                 print(f"    Available files: {os.listdir('.')}")
                 raise FileNotFoundError(
-                    f"Model file not found: {model_file}\n"
-                    f"  When running in containers, absolute paths may not be accessible.\n"
-                    f"  Use model names (for automatic download) or ensure the file is staged in the work directory."
+                    f"Model file not found: {model_file}. "
+                    "When running in containers, absolute paths may not be accessible. "
+                    "Use model names (for automatic download) or ensure the file is staged in the work directory."
                 )
     
     elif model in ORGAN_ATLAS_MODELS:
@@ -123,8 +123,8 @@ for model in models:
             print(f"  ✓ Organ atlas model downloaded successfully ({file_size_mb:.2f} MB)")
         except Exception as e:
             raise RuntimeError(
-                f"Failed to download organ atlas model from {organ_url}: {e}\n"
-                f"  Please check your internet connection and the URL accessibility."
+                f"Failed to download organ atlas model from {organ_url}: {e}. "
+                "Please check your internet connection and the URL accessibility."
             )
     
     else:
