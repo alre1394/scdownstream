@@ -85,21 +85,35 @@ for model in models:
             raise FileNotFoundError(f"Model file not found: {model_file}")
     
     elif model in ORGAN_ATLAS_MODELS:
-        # It's an organ atlas model - download from organ atlas URL
+        # It's an organ atlas model - try downloading via celltypist API with full model name
         model_name = model
-        model_file = f"{model_name}.pkl"
-        organ_url = ORGAN_ATLAS_MODELS[model]
+        print(f"  Attempting to download organ atlas model: {model_name}")
         
-        print(f"  Downloading organ atlas model: {model_name}")
-        print(f"  URL: {organ_url}")
-        
-        # Download the model file from organ atlas URL
-        import urllib.request
+        # Try downloading via celltypist API (organ atlas models are in the model list)
         try:
-            urllib.request.urlretrieve(organ_url, model_file)
-            print(f"  ✓ Organ atlas model downloaded successfully")
-        except Exception as e:
-            raise RuntimeError(f"Failed to download organ atlas model from {organ_url}: {e}")
+            # First try with the mixed-case name
+            ct_models.download_models(model=model_name, force_update=False)
+            model_file = f"{model_name}.pkl"
+            print(f"  ✓ Organ atlas model downloaded successfully via celltypist API")
+        except ValueError:
+            # If that fails, try constructing the URL with the expected lowercase format
+            organ_url = ORGAN_ATLAS_MODELS[model]
+            model_file = f"{model_name}.pkl"
+            print(f"  Celltypist API failed, trying direct download from: {organ_url}")
+            
+            import urllib.request
+            try:
+                urllib.request.urlretrieve(organ_url, model_file)
+                print(f"  ✓ Organ atlas model downloaded successfully via direct URL")
+            except Exception as e:
+                # Provide detailed error message with troubleshooting
+                print(f"  ✗ Failed to download {model_name}")
+                print(f"  Tried celltypist API and direct URL: {organ_url}")
+                raise RuntimeError(
+                    f"Failed to download organ atlas model '{model_name}'. "
+                    f"The model may not be available. Try using a built-in celltypist model instead, "
+                    f"or check https://www.celltypist.org/models for available models. Error: {e}"
+                )
     
     else:
         # It's a built-in celltypist model name - download using celltypist API
@@ -197,5 +211,3 @@ versions = {
 
 with open("versions.yml", "w") as f:
     f.write(format_yaml_like(versions))
-
-print("✓ Celltypist annotation complete")
