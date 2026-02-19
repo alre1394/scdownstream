@@ -1,6 +1,7 @@
 process CELLTYPES_CELLTYPIST {
     tag "${meta.id}"
     label 'process_medium'
+    publishDir "${params.outdir}/celltype_assignment/celltypist", mode: 'copy'
 
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
@@ -16,6 +17,7 @@ process CELLTYPES_CELLTYPIST {
     tuple val(meta), path("*.h5ad"), emit: h5ad
     tuple val(meta), path("*_celltypist.pkl"), emit: obs
     path("*_celltypist_probabilities.parquet.gz", optional: true), emit: probabilities
+    path("*_celltypist_probabilities_metadata.csv", optional: true), emit: probabilities_metadata
     path "versions.yml", emit: versions
 
     when:
