@@ -6,7 +6,7 @@ process CELLTYPES_CELLTYPIST {
         mode: 'copy',
         enabled: params.celltypist_save_probabilities == true,
         saveAs: { filename -> 
-            filename.contains('_probabilities.') ? filename : null 
+            (filename.contains('_probabilities.pkl.gz') || filename.contains('_probabilities_metadata.csv')) ? filename : null 
         }
     
     // Always publish main results
@@ -29,7 +29,7 @@ process CELLTYPES_CELLTYPIST {
     output:
     tuple val(meta), path("*.h5ad"), emit: h5ad
     tuple val(meta), path("*_celltypist.pkl"), emit: obs
-    path("*_probabilities.parquet.gz"), emit: probabilities, optional: true
+    path("*_probabilities.pkl.gz"), emit: probabilities, optional: true
     path("*_probabilities_metadata.csv"), emit: probabilities_metadata, optional: true
     path "versions.yml", emit: versions
 

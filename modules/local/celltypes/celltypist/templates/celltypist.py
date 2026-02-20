@@ -182,18 +182,18 @@ for model in models:
             columns=cell_type_names
         )
         
-        # Save to compressed parquet file
-        parquet_file = f"{prefix}_{model_name}_probabilities.parquet.gz"
-        prob_df.to_parquet(parquet_file, compression='gzip', index=True)
+        # Save to compressed pickle file (pickle is available without extra dependencies)
+        prob_file = f"{prefix}_{model_name}_probabilities.pkl.gz"
+        prob_df.to_pickle(prob_file, compression='gzip')
         
-        file_size_mb = os.path.getsize(parquet_file) / 1024**2
-        print(f"  ✓ Probability matrix saved: {parquet_file} ({file_size_mb:.2f} MB)")
+        file_size_mb = os.path.getsize(prob_file) / 1024**2
+        print(f"  ✓ Probability matrix saved: {prob_file} ({file_size_mb:.2f} MB)")
         
         # Store reference in adata metadata for later retrieval
         if "celltypist_probability_files" not in adata.uns:
             adata.uns["celltypist_probability_files"] = {}
-        adata.uns["celltypist_probability_files"][model_name] = parquet_file
-        probability_files[model_name] = parquet_file
+        adata.uns["celltypist_probability_files"][model_name] = prob_file
+        probability_files[model_name] = prob_file
     else:
         print(f"  Skipping probability matrix saving (celltypist_save_probabilities=False)")
 
@@ -207,7 +207,7 @@ adata.write_h5ad(f"{prefix}.h5ad")
 if save_probabilities and probability_files:
     metadata_df = pd.DataFrame({
         "model_name": list(probability_files.keys()),
-        "parquet_file": list(probability_files.values())
+        "probability_file": list(probability_files.values())
     })
     metadata_df.to_csv(f"{prefix}_probabilities_metadata.csv", index=False)
     print(f"✓ Probability files metadata saved: {prefix}_probabilities_metadata.csv")
