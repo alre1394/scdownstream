@@ -169,8 +169,8 @@ for model in models:
     if save_probabilities:
         print(f"  Saving probability matrix to parquet file...")
         
-        # Extract full probability matrix (already aligned with adata.obs.index)
-        prob_matrix = predictions_adata.obsm["predicted_labels_probability"]
+        # Extract full probability matrix directly from predictions object
+        prob_matrix = predictions.probability_matrix
         
         # Get cell type names from the predictions
         cell_type_names = predictions_adata.obs['predicted_labels'].cat.categories.tolist()
