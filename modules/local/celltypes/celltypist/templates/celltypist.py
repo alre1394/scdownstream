@@ -167,7 +167,7 @@ for model in models:
     
     # Save full probability matrix if requested
     if save_probabilities:
-        print(f"  Saving probability matrix to parquet file...")
+        print(f"  Saving full probability matrix...")
         
         # Extract full probability matrix directly from predictions object
         prob_matrix = predictions.probability_matrix
@@ -182,12 +182,23 @@ for model in models:
             columns=cell_type_names
         )
         
-        # Save to compressed pickle file (pickle is available without extra dependencies)
+        # Store probability matrix in adata.obsm (primary storage in h5ad)
+        obsm_key = f'celltypist_{model_name}_probabilities'
+        adata.obsm[obsm_key] = prob_df.values
+        
+        # Store cell type names in adata.uns for reference
+        uns_key = f'celltypist_{model_name}_celltypes'
+        adata.uns[uns_key] = cell_type_names
+        
+        print(f"  ✓ Probability matrix stored in adata.obsm['{obsm_key}']")
+        print(f"  ✓ Cell type names stored in adata.uns['{uns_key}']")
+        
+        # Also save to compressed pickle file for standalone use (backward compatibility)
         prob_file = f"{prefix}_{model_name}_probabilities.pkl.gz"
         prob_df.to_pickle(prob_file, compression='gzip')
         
         file_size_mb = os.path.getsize(prob_file) / 1024**2
-        print(f"  ✓ Probability matrix saved: {prob_file} ({file_size_mb:.2f} MB)")
+        print(f"  ✓ Backup pickle file saved: {prob_file} ({file_size_mb:.2f} MB)")
         
         # Store reference in adata metadata for later retrieval
         if "celltypist_probability_files" not in adata.uns:
