@@ -224,7 +224,6 @@ if save_probabilities and probability_files:
     print(f"✓ Probability files metadata saved: {prefix}_probabilities_metadata.csv")
 
 # Versions
-
 versions = {
     "${task.process}": {
         "python": platform.python_version(),
