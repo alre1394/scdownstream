@@ -67,38 +67,40 @@ workflow UNIFY {
         ch_versions = ch_versions.mix(UNIFY_GENES.out.versions)
     }
 
-    ch_adata_unify = ch_h5ad.multiMap { meta, h5ad ->
-        h5ad: [meta, h5ad]
-        batch_col: meta.batch_col ?: "batch"
-        label_col: meta.label_col ?: ""
-        condition_col: meta.condition_col ?: ""
-        unknown_label: meta.unknown_label ?: "unknown"
-        symbol_col: meta.symbol_col ?: "index"
-        counts_layer: meta.counts_layer ?: "X"
+    if (unify_gene_symbols) {
+        ch_adata_unify = ch_h5ad.multiMap { meta, h5ad ->
+            h5ad: [meta, h5ad]
+            batch_col: meta.batch_col ?: "batch"
+            label_col: meta.label_col ?: ""
+            condition_col: meta.condition_col ?: ""
+            unknown_label: meta.unknown_label ?: "unknown"
+            symbol_col: meta.symbol_col ?: "index"
+            counts_layer: meta.counts_layer ?: "X"
+        }
+        ADATA_UNIFY(
+            ch_adata_unify.h5ad,
+            ch_adata_unify.batch_col,
+            ch_adata_unify.label_col,
+            ch_adata_unify.condition_col,
+            ch_adata_unify.unknown_label,
+            ch_adata_unify.symbol_col,
+            ch_adata_unify.counts_layer,
+            duplicate_var_resolution,
+            aggregate_isoforms
+        )
+        ch_h5ad = ADATA_UNIFY.out.h5ad.map { meta, h5ad -> [
+            meta + [
+                batch_col: 'batch',
+                label_col: 'label',
+                condition_col: 'condition',
+                unknown_label: 'unknown',
+                symbol_col: 'index',
+                counts_layer: 'X'
+            ],
+            h5ad]
+        }
+        ch_versions = ch_versions.mix(ADATA_UNIFY.out.versions)
     }
-    ADATA_UNIFY(
-        ch_adata_unify.h5ad,
-        ch_adata_unify.batch_col,
-        ch_adata_unify.label_col,
-        ch_adata_unify.condition_col,
-        ch_adata_unify.unknown_label,
-        ch_adata_unify.symbol_col,
-        ch_adata_unify.counts_layer,
-        duplicate_var_resolution,
-        aggregate_isoforms
-    )
-    ch_h5ad = ADATA_UNIFY.out.h5ad.map { meta, h5ad -> [
-        meta + [
-            batch_col: 'batch',
-            label_col: 'label',
-            condition_col: 'condition',
-            unknown_label: 'unknown',
-            symbol_col: 'index',
-            counts_layer: 'X'
-        ],
-        h5ad]
-    }
-    ch_versions = ch_versions.mix(ADATA_UNIFY.out.versions)
 
     UPSET_GENES (
         ch_h5ad
